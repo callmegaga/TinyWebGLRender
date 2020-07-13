@@ -1,2 +1,2 @@
 # TinyWebGLRender
-一直最小功能的WebGL渲染引擎
+一个最小功能的WebGL渲染引擎

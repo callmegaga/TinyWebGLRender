@@ -1,17 +1,21 @@
 {
-  "name": "WebGL",
+  "name": "WebGLRenderer",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "http-server -c-1",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint src -c .eslintrc.js",
+    "build": "rollup -c rollup.config.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "clang-format": "^1.4.0",
-    "http-server": "^0.12.3"
+    "http-server": "^0.12.3",
+    "rollup": "^2.21.0"
+  },
+  "dependencies": {
+    "eslint": "^7.4.0"
   }
 }

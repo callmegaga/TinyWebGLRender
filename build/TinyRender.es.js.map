@@ -1,0 +1,1 @@
+{"version":3,"file":"TinyRender.es.js","sources":["../src/index.js"],"sourcesContent":["export default function TinyRender() {\n\tconsole.log(\"Hello World\");\n}"],"names":[],"mappings":"AAAe,SAAS,UAAU,GAAG;AACrC,CAAC,OAAO,CAAC,GAAG,CAAC,aAAa,CAAC,CAAC;AAC5B;;;;"}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<title>TinyRenderDemo</title>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+	const VertexShaderSource = "" +
+		"attribute vec4 a_position;\n" +
+		"attribute vec4 a_color;\n" +
+		"uniform mat4 u_camera;\n" +
+		"varying vec4 v_color;" +
+		"void main() {\n" +
+		"	gl_Position = u_camera * a_position;\n" +
+		"	v_color = a_color;" +
+		"}\n";
+
+	const FragmentShaderSource = "" +
+		"precision mediump float;\n" +
+		"varying vec4 v_color;" +
+		"void main() {\n" +
+		"	gl_FragColor = v_color;\n" +
+		"}\n";
+
+	const vertices = new Float32Array([
+		0.0, 0.5, -0.1,
+		-0.5, -0.5, -0.1,
+		0.5, -0.5, -0.1,
+
+		-0.25, 0.5, 0.1,
+		-0.75, -0.5, 0.1,
+		0.25, -0.5, 0.1,
+
+		0.25, 0.5, 0.0,
+		-0.25, -0.5, 0.0,
+		0.75, -0.5, 0.0,
+	]);
+
+	const colors = new Float32Array([
+		1.0, 0.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 0.0, 1.0,
+
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0
+	])
+
+	const canvas = document.getElementById("canvas");
+
+	const webgl = canvas.getContext("webgl", {antialias: true});
+	if (!webgl) {
+		console.log("Error to getContext for webgl");
+	}
+
+	webgl.clearColor(1.0, 1.0, 0.0, 1.0);
+	webgl.enable(webgl.DEPTH_TEST);
+
+	const VertexShader = webgl.createShader(webgl.VERTEX_SHADER);
+	const FragmentShader = webgl.createShader(webgl.FRAGMENT_SHADER);
+
+	webgl.shaderSource(VertexShader, VertexShaderSource);
+	webgl.shaderSource(FragmentShader, FragmentShaderSource);
+
+	webgl.compileShader(VertexShader);
+	if (!webgl.getShaderParameter(VertexShader, webgl.COMPILE_STATUS)) {
+		console.log(webgl.getShaderInfoLog(VertexShader));
+	}
+
+	webgl.compileShader(FragmentShader);
+	if (!webgl.getShaderParameter(FragmentShader, webgl.COMPILE_STATUS)) {
+		console.log(webgl.getShaderInfoLog(FragmentShader));
+	}
+
+	const Program = webgl.createProgram();
+	webgl.attachShader(Program, VertexShader);
+	webgl.attachShader(Program, FragmentShader);
+	webgl.linkProgram(Program);
+	webgl.useProgram(Program);
+
+	const a_position = webgl.getAttribLocation(Program, "a_position");
+	if (a_position < 0) {
+		console.log("Failed to get location fo a_position");
+	}
+
+	const a_color = webgl.getAttribLocation(Program, "a_color");
+	if (a_color < 0) {
+		console.log("Failed to get location for a_color");
+	}
+
+	const u_camera = webgl.getUniformLocation(Program, "u_camera");
+	if (u_camera < 0) {
+		console.log("Failed to get location for u_camera");
+	}
+
+	const Camera = new Float32Array([
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, -1.0, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	]);
+
+	const vertex_buffer = webgl.createBuffer();
+	webgl.bindBuffer(webgl.ARRAY_BUFFER, vertex_buffer);
+	webgl.bufferData(webgl.ARRAY_BUFFER, vertices, webgl.STATIC_DRAW);
+	webgl.vertexAttribPointer(a_position, 3, webgl.FLOAT, false, 0, 0);
+	webgl.enableVertexAttribArray(a_position);
+
+	const color_buffer = webgl.createBuffer();
+	webgl.bindBuffer(webgl.ARRAY_BUFFER, color_buffer);
+	webgl.bufferData(webgl.ARRAY_BUFFER, colors, webgl.STATIC_DRAW);
+	webgl.vertexAttribPointer(a_color, 3, webgl.FLOAT, false, 0, 0);
+	webgl.enableVertexAttribArray(a_color);
+
+	render();
+
+	document.addEventListener("keydown", ev => {
+		switch (ev.code) {
+		case "ArrowLeft":
+			Camera[12] -= 0.01;
+			break;
+		case "ArrowRight":
+			Camera[12] += 0.01;
+			break
+		}
+
+		render();
+	})
+
+	function render() {
+		webgl.clear(webgl.COLOR_BUFFER_BIT | webgl.DEPTH_BUFFER_BIT);
+		webgl.uniformMatrix4fv(u_camera, false, Camera);
+		webgl.drawArrays(webgl.TRIANGLES, 0, 9);
+	}
+
+</script>
+</body>
+</html>
