@@ -330,10 +330,11 @@
 	webgl.enableVertexAttribArray(a_color);
 
 
-	let positionX = 0;
+	let Angle = 0;
+	const arcBallR = 5;
 
-	const Camera = new Matrix4().setView(positionX, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	const Orthographic = new Matrix4().setOrthographic(-5, 5, -5, 5, 1, -100);
+	const Camera = new Matrix4();
+	const Orthographic = new Matrix4().setOrthographic(-2, 2, -2, 2, 1, -100);
 	const PVMatrix = new Matrix4();
 
 	render();
@@ -341,24 +342,31 @@
 	document.addEventListener("keydown", ev => {
 		switch (ev.code) {
 		case "ArrowLeft":
-			positionX -= 0.01;
-			Camera.setView(positionX, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+			Angle -= 1;
 			break;
 		case "ArrowRight":
-			positionX += 0.01;
-			Camera.setView(positionX, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+			Angle += 1;
 			break
 		}
 		render();
 	})
 
 	function render() {
+		let camera_position = calculateCameraPosition(Angle);
+		Camera.setView(camera_position[0], camera_position[1], camera_position[2], 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
 		PVMatrix.set(Orthographic.elements).multiply(Camera);
 		webgl.clear(webgl.COLOR_BUFFER_BIT | webgl.DEPTH_BUFFER_BIT);
 		webgl.uniformMatrix4fv(u_camera, false, PVMatrix.elements);
 		webgl.drawArrays(webgl.TRIANGLES, 0, 9);
 	}
 
+	// 计算轨道相机在世界坐标系下的位置
+	function calculateCameraPosition(angle) {
+		angle = angle % 360;
+		const degree = angle / 180 * Math.PI;
+		return [arcBallR * Math.sin(degree), 0.0, arcBallR * Math.cos(degree)];
+	}
 </script>
 </body>
 </html>
