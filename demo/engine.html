@@ -2,18 +2,43 @@
 <html lang="zh-cn">
 <head>
 	<meta charset="UTF-8">
-	<title>TinyRenderDemo</title>
+	<title>TinyEngine</title>
 </head>
 <body>
 <canvas id="canvas" width="800" height="800"></canvas>
 <script>
-
 	const DEFAULT_MATRIX_ELEMENTS = [
 		1.0, 0.0, 0.0, 0.0,
 		0.0, 1.0, 0.0, 0.0,
 		0.0, 0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0, 1.0
 	];
+
+	class Vector3 {
+		constructor(x, y, z) {
+			this.elements = new Float32Array([x, y, z]);
+		}
+
+		// 加法
+		add(){
+
+		}
+
+		// 减法
+		minus(){
+
+		}
+
+		// 点乘
+		dot(){
+
+		}
+
+		// 叉乘
+		cross(){
+
+		}
+	}
 
 	class Matrix4 {
 		constructor(elements) {
@@ -225,148 +250,143 @@
 		}
 	}
 
-	const VertexShaderSource = "" +
-		"attribute vec4 a_position;\n" +
-		"attribute vec4 a_color;\n" +
-		"uniform mat4 u_camera;\n" +
-		"varying vec4 v_color;" +
-		"void main() {\n" +
-		"	gl_Position = u_camera * a_position;\n" +
-		"	v_color = a_color;" +
-		"}\n";
-
-	const FragmentShaderSource = "" +
-		"precision mediump float;\n" +
-		"varying vec4 v_color;" +
-		"void main() {\n" +
-		"	gl_FragColor = v_color;\n" +
-		"}\n";
-
-	const vertices = new Float32Array([
-		0.0, 0.5, -0.1,
-		-0.5, -0.5, -0.1,
-		0.5, -0.5, -0.1,
-
-		-0.25, 0.5, 0.1,
-		-0.75, -0.5, 0.1,
-		0.25, -0.5, 0.1,
-
-		0.25, 0.5, 0.0,
-		-0.25, -0.5, 0.0,
-		0.75, -0.5, 0.0,
-	]);
-
-	const colors = new Float32Array([
-		1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 0.0, 1.0,
-
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0
-	])
-
-	const canvas = document.getElementById("canvas");
-
-	const webgl = canvas.getContext("webgl", {antialias: true});
-	if (!webgl) {
-		console.log("Error to getContext for webgl");
-	}
-
-	webgl.clearColor(1.0, 1.0, 0.0, 1.0);
-	webgl.enable(webgl.DEPTH_TEST);
-
-	const VertexShader = webgl.createShader(webgl.VERTEX_SHADER);
-	const FragmentShader = webgl.createShader(webgl.FRAGMENT_SHADER);
-
-	webgl.shaderSource(VertexShader, VertexShaderSource);
-	webgl.shaderSource(FragmentShader, FragmentShaderSource);
-
-	webgl.compileShader(VertexShader);
-	if (!webgl.getShaderParameter(VertexShader, webgl.COMPILE_STATUS)) {
-		console.log(webgl.getShaderInfoLog(VertexShader));
-	}
-
-	webgl.compileShader(FragmentShader);
-	if (!webgl.getShaderParameter(FragmentShader, webgl.COMPILE_STATUS)) {
-		console.log(webgl.getShaderInfoLog(FragmentShader));
-	}
-
-	const Program = webgl.createProgram();
-	webgl.attachShader(Program, VertexShader);
-	webgl.attachShader(Program, FragmentShader);
-	webgl.linkProgram(Program);
-	webgl.useProgram(Program);
-
-	const a_position = webgl.getAttribLocation(Program, "a_position");
-	if (a_position < 0) {
-		console.log("Failed to get location fo a_position");
-	}
-
-	const a_color = webgl.getAttribLocation(Program, "a_color");
-	if (a_color < 0) {
-		console.log("Failed to get location for a_color");
-	}
-
-	const u_camera = webgl.getUniformLocation(Program, "u_camera");
-	if (u_camera < 0) {
-		console.log("Failed to get location for u_camera");
-	}
-
-
-	const vertex_buffer = webgl.createBuffer();
-	webgl.bindBuffer(webgl.ARRAY_BUFFER, vertex_buffer);
-	webgl.bufferData(webgl.ARRAY_BUFFER, vertices, webgl.STATIC_DRAW);
-	webgl.vertexAttribPointer(a_position, 3, webgl.FLOAT, false, 0, 0);
-	webgl.enableVertexAttribArray(a_position);
-
-	const color_buffer = webgl.createBuffer();
-	webgl.bindBuffer(webgl.ARRAY_BUFFER, color_buffer);
-	webgl.bufferData(webgl.ARRAY_BUFFER, colors, webgl.STATIC_DRAW);
-	webgl.vertexAttribPointer(a_color, 3, webgl.FLOAT, false, 0, 0);
-	webgl.enableVertexAttribArray(a_color);
-
-
-	let Angle = 0;
-	const arcBallR = 5;
-
-	const Camera = new Matrix4();
-	const Orthographic = new Matrix4().setOrthographic(-2, 2, -2, 2, 1, -100);
-	const PVMatrix = new Matrix4();
-
-	render();
-
-	document.addEventListener("keydown", ev => {
-		switch (ev.code) {
-		case "ArrowLeft":
-			Angle -= 1;
-			break;
-		case "ArrowRight":
-			Angle += 1;
-			break
+	class OrthographicCamera{
+		constructor(position, target, up, left, right, bottom, top, near, far) {
+			this.position = position;
+			this.target = target;
+			this.up = up;
+			this.left = left;
+			this.right = right;
+			this.bottom = bottom;
+			this.top = top;
+			this.near = near;
+			this.far = far;
+			this.matirx = new Matrix4();
+			this.update();
 		}
-		render();
-	})
 
-	function render() {
-		let camera_position = calculateCameraPosition(Angle);
-		Camera.setView(camera_position[0], camera_position[1], camera_position[2], 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+		update(){
+			let view_matrix = new Matrix4().setView(this.position[0], this.position[1], this.position[2], this.target[0], this.target[1], this.target[2], this.up[0], this.up[1], this.lookAt[2]);
+			let projection_matrix = new Matrix4().setOrthographic(this.left, this.right, this.bottom, this.top, this.near, this.far);
 
-		PVMatrix.set(Orthographic.elements).multiply(Camera);
-		webgl.clear(webgl.COLOR_BUFFER_BIT | webgl.DEPTH_BUFFER_BIT);
-		webgl.uniformMatrix4fv(u_camera, false, PVMatrix.elements);
-		webgl.drawArrays(webgl.TRIANGLES, 0, 9);
+			this.matirx.set(projection_matrix).multiply(view_matrix);
+		}
+
+		moveTo(position){
+			this.position = position;
+			this.update();
+		}
+
+		lookAt(target){
+			this.target = target;
+			this.update();
+		}
+
+		changeOrthographic(left, right, bottom, top, near, far){
+			this.left = left;
+			this.right = right;
+			this.bottom = bottom;
+			this.top = top;
+			this.near = near;
+			this.far = far;
+			this.update();
+		}
 	}
 
-	// 计算轨道相机在世界坐标系下的位置
-	function calculateCameraPosition(angle) {
-		angle = angle % 360;
-		const degree = angle / 180 * Math.PI;
-		return [arcBallR * Math.sin(degree), 0.0, arcBallR * Math.cos(degree)];
+	class Shader{
+		constructor(vertex, fragment) {
+			this.vertex = vertex;
+			this.fragment = fragment;
+		}
+
+		initShader(webgl){
+			const VertexShader = webgl.createShader(webgl.VERTEX_SHADER);
+			const FragmentShader = webgl.createShader(webgl.FRAGMENT_SHADER);
+
+			webgl.shaderSource(VertexShader, this.vertex);
+			webgl.shaderSource(FragmentShader, this.fragment);
+
+			webgl.compileShader(VertexShader);
+			if (!webgl.getShaderParameter(VertexShader, webgl.COMPILE_STATUS)) {
+				console.log(webgl.getShaderInfoLog(VertexShader));
+			}
+
+			webgl.compileShader(FragmentShader);
+			if (!webgl.getShaderParameter(FragmentShader, webgl.COMPILE_STATUS)) {
+				console.log(webgl.getShaderInfoLog(FragmentShader));
+			}
+
+			const Program = webgl.createProgram();
+			webgl.attachShader(Program, VertexShader);
+			webgl.attachShader(Program, FragmentShader);
+			webgl.linkProgram(Program);
+
+			this.program = Program;
+		}
+
+		use(webgl){
+			webgl.useProgram(this.program);
+		}
+	}
+
+	class Model{
+		constructor(shader, vertices, colors, number) {
+			this.shader = shader;
+			this.vertices = vertices;
+			this.colors = colors;
+			this.number = number;
+		}
+
+		initBuffer(webgl, a_position, a_color){
+			const vertex_buffer = webgl.createBuffer();
+			webgl.bindBuffer(webgl.ARRAY_BUFFER, vertex_buffer);
+			webgl.bufferData(webgl.ARRAY_BUFFER, vertices, webgl.STATIC_DRAW);
+			webgl.vertexAttribPointer(a_position, 3, webgl.FLOAT, false, 0, 0);
+			webgl.enableVertexAttribArray(a_position);
+			this.vertex_buffer = vertex_buffer;
+
+			const color_buffer = webgl.createBuffer();
+			webgl.bindBuffer(webgl.ARRAY_BUFFER, color_buffer);
+			webgl.bufferData(webgl.ARRAY_BUFFER, colors, webgl.STATIC_DRAW);
+			webgl.vertexAttribPointer(a_color, 3, webgl.FLOAT, false, 0, 0);
+			webgl.enableVertexAttribArray(a_color);
+			this.color_buffer = color_buffer
+		}
+	}
+
+	class Engine{
+		constructor(dom) {
+			this.dom = dom;
+			this.models = [];
+			this.camera = undefined;
+			this.init();
+		}
+
+		init(){
+			const canvas = document.getElementById(this.dom);
+
+			const webgl = canvas.getContext("webgl", {antialias: true});
+			if (!webgl) {
+				console.log("Error to getContext for webgl");
+			}
+
+			webgl.clearColor(1.0, 1.0, 0.0, 1.0);
+			webgl.enable(webgl.DEPTH_TEST);
+
+			this.webgl = webgl;
+		}
+
+		addModel(model){
+			this.models.push(model);
+		}
+
+		setCamera(camera){
+			this.camera = camera
+		}
+
+		render(){
+
+		}
 	}
 </script>
 </body>
