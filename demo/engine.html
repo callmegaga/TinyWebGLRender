@@ -2,10 +2,10 @@
 <html lang="zh-cn">
 <head>
 	<meta charset="UTF-8">
-	<title>TinyEngine</title>
+	<title>TinyWebGLEngine</title>
 </head>
 <body>
-<canvas id="canvas" width="800" height="800"></canvas>
+<canvas id="canvas" width="800" height="800"></canvas><h1>按下方向键左右旋转摄像机</h1>
 <script>
 	const DEFAULT_MATRIX_ELEMENTS = [
 		1.0, 0.0, 0.0, 0.0,
@@ -13,32 +13,6 @@
 		0.0, 0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0, 1.0
 	];
-
-	class Vector3 {
-		constructor(x, y, z) {
-			this.elements = new Float32Array([x, y, z]);
-		}
-
-		// 加法
-		add(){
-
-		}
-
-		// 减法
-		minus(){
-
-		}
-
-		// 点乘
-		dot(){
-
-		}
-
-		// 叉乘
-		cross(){
-
-		}
-	}
 
 	class Matrix4 {
 		constructor(elements) {
@@ -96,6 +70,7 @@
 			let sin = Math.sin(degree);
 
 			if (x === 0 && y === 0 && z !== 0){
+				// 绕Z轴旋转
 				if (z < 0){
 					sin = -sin;
 				}
@@ -107,6 +82,7 @@
 					0.0, 0.0, 0.0, 1.0
 				]));
 			}else if (x === 0 && y !== 0 && z === 0){
+				// 绕Y轴旋转
 				if (y < 0){
 					sin = -sin;
 				}
@@ -117,6 +93,7 @@
 					0.0, 0.0, 0.0, 1.0
 				]));
 			}else if (x !== 0 && y === 0 && z === 0){
+				// 绕X轴旋转
 				if (x < 0){
 					sin = -sin;
 				}
@@ -255,21 +232,24 @@
 			this.position = position;
 			this.target = target;
 			this.up = up;
+
 			this.left = left;
 			this.right = right;
 			this.bottom = bottom;
 			this.top = top;
 			this.near = near;
 			this.far = far;
-			this.matirx = new Matrix4();
+			this.matrix = new Matrix4();
+
 			this.update();
 		}
 
 		update(){
-			let view_matrix = new Matrix4().setView(this.position[0], this.position[1], this.position[2], this.target[0], this.target[1], this.target[2], this.up[0], this.up[1], this.lookAt[2]);
+			let view_matrix = new Matrix4().setView(this.position[0], this.position[1], this.position[2], this.target[0], this.target[1], this.target[2], this.up[0], this.up[1], this.up[2]);
+
 			let projection_matrix = new Matrix4().setOrthographic(this.left, this.right, this.bottom, this.top, this.near, this.far);
 
-			this.matirx.set(projection_matrix).multiply(view_matrix);
+			this.matrix.set(projection_matrix.elements).multiply(view_matrix);
 		}
 
 		moveTo(position){
@@ -294,9 +274,11 @@
 	}
 
 	class Shader{
-		constructor(vertex, fragment) {
+		constructor(vertex, fragment, attribute_names, uniform_names) {
 			this.vertex = vertex;
 			this.fragment = fragment;
+			this.attribute_names = attribute_names;
+			this.uniform_names = uniform_names;
 		}
 
 		initShader(webgl){
@@ -324,33 +306,80 @@
 			this.program = Program;
 		}
 
+		initAttribute(webgl){
+			this.attribute = {};
+			for (let i in this.attribute_names){
+				let attribute = this.attribute_names[i];
+				let a_attribute = webgl.getAttribLocation(this.program, attribute);
+				if (a_attribute < 0){
+					console.log("Failed to get location for " + attribute);
+					return null;
+				}
+				this.attribute[attribute] = a_attribute
+			}
+		}
+
+		initUniform(webgl){
+			this.uniform = {};
+			for (let i in this.uniform_names){
+				let name = this.uniform_names[i];
+				let u_uniform = webgl.getUniformLocation(this.program, name);
+				if (u_uniform < 0){
+					console.log("Failed to get location for " + name);
+					return null;
+				}
+				this.uniform[name] = u_uniform
+			}
+		}
+
 		use(webgl){
 			webgl.useProgram(this.program);
 		}
 	}
 
+	class Buffer{
+		constructor(data, size, type, pointer_name) {
+			this.data = data;
+			this.size = size;
+			this.type = type;
+			this.pointer_name = pointer_name;
+		}
+
+		initBuffer(webgl, pointer){
+			const buffer = webgl.createBuffer();
+			webgl.bindBuffer(webgl.ARRAY_BUFFER, buffer);
+			webgl.bufferData(webgl.ARRAY_BUFFER, this.data, webgl.STATIC_DRAW);
+			webgl.vertexAttribPointer(pointer, this.size, this.type, false, 0, 0);
+			webgl.enableVertexAttribArray(pointer);
+			webgl.bindBuffer(webgl.ARRAY_BUFFER, null);
+		}
+	}
+
 	class Model{
-		constructor(shader, vertices, colors, number) {
+		constructor(shader, buffers, number) {
 			this.shader = shader;
-			this.vertices = vertices;
-			this.colors = colors;
+			this.buffers = buffers;
 			this.number = number;
 		}
 
-		initBuffer(webgl, a_position, a_color){
-			const vertex_buffer = webgl.createBuffer();
-			webgl.bindBuffer(webgl.ARRAY_BUFFER, vertex_buffer);
-			webgl.bufferData(webgl.ARRAY_BUFFER, vertices, webgl.STATIC_DRAW);
-			webgl.vertexAttribPointer(a_position, 3, webgl.FLOAT, false, 0, 0);
-			webgl.enableVertexAttribArray(a_position);
-			this.vertex_buffer = vertex_buffer;
+		initModel(webgl){
+			this.shader.initShader(webgl);
+			this.shader.initAttribute(webgl);
+			this.shader.initUniform(webgl);
+			this.initBuffers(webgl, this.shader.attribute)
+			this.is_init = true;
+		}
 
-			const color_buffer = webgl.createBuffer();
-			webgl.bindBuffer(webgl.ARRAY_BUFFER, color_buffer);
-			webgl.bufferData(webgl.ARRAY_BUFFER, colors, webgl.STATIC_DRAW);
-			webgl.vertexAttribPointer(a_color, 3, webgl.FLOAT, false, 0, 0);
-			webgl.enableVertexAttribArray(a_color);
-			this.color_buffer = color_buffer
+		initBuffers(webgl, pointers){
+			for (let i in this.buffers){
+				let buffer = this.buffers[i];
+				let pointer = pointers[buffer.pointer_name];
+				if (pointer === undefined){
+					console.log("Can't find attribute " + buffer.pointer_name);
+				}
+
+				buffer.initBuffer(webgl, pointer)
+			}
 		}
 	}
 
@@ -377,6 +406,7 @@
 		}
 
 		addModel(model){
+			if (model.is_init === undefined) model.initModel(this.webgl);
 			this.models.push(model);
 		}
 
@@ -385,9 +415,102 @@
 		}
 
 		render(){
+			this.webgl.clear(this.webgl.COLOR_BUFFER_BIT | this.webgl.DEPTH_BUFFER_BIT);
+			for (let i in this.models){
+				let model = this.models[i];
+				model.shader.use(this.webgl);
 
+				if (model.shader.uniform["u_camera"]){
+					this.webgl.uniformMatrix4fv(model.shader.uniform["u_camera"], false, this.camera.matrix.elements);
+				}
+
+				this.webgl.drawArrays(this.webgl.TRIANGLES, 0, model.number);
+			}
 		}
 	}
+
+	const VertexShaderSource = "" +
+		"attribute vec4 a_position;\n" +
+		"attribute vec4 a_color;\n" +
+		"uniform mat4 u_camera;\n" +
+		"varying vec4 v_color;" +
+		"void main() {\n" +
+		"	gl_Position = u_camera * a_position;\n" +
+		"	v_color = a_color;" +
+		"}\n";
+
+	const FragmentShaderSource = "" +
+		"precision mediump float;\n" +
+		"varying vec4 v_color;" +
+		"void main() {\n" +
+		"	gl_FragColor = v_color;\n" +
+		"}\n";
+
+	const Vertices = new Float32Array([
+		 0.0,  0.5, -0.1,
+		-0.5, -0.5, -0.1,
+		 0.5, -0.5, -0.1,
+
+		-0.25,  0.5, 0.1,
+		-0.75, -0.5, 0.1,
+		 0.25, -0.5, 0.1,
+
+		 0.25,  0.5, 0.0,
+		-0.25, -0.5, 0.0,
+		 0.75, -0.5, 0.0,
+	]);
+
+	const Colors = new Float32Array([
+		1.0, 0.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 0.0, 1.0,
+
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0
+	])
+
+	const Scene = new Engine("canvas");
+	const VertexBuffer = new Buffer(Vertices, 3, Scene.webgl.FLOAT, "a_position");
+	const ColorBuffer = new Buffer(Colors, 3, Scene.webgl.FLOAT, "a_color");
+	const ColorShader = new Shader(VertexShaderSource, FragmentShaderSource, ["a_position", "a_color"], ["u_camera"]);
+	const TrianglesModel = new Model(ColorShader, [VertexBuffer, ColorBuffer], 9);
+	const Camera = new OrthographicCamera([0.0, 0.0, 5.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0],-2, 2, -2, 2, 1, -100);
+	Scene.addModel(TrianglesModel);
+	Scene.setCamera(Camera);
+	Scene.render();
+
+	// 初始的轨道相机旋转角度
+	let Angle = 0;
+
+	// 轨道相机的半径
+	const ArcBallR = 5;
+
+	// 计算轨道相机在世界坐标系下的位置
+	function calculateCameraPosition(angle) {
+		angle = angle % 360;
+		const degree = angle / 180 * Math.PI;
+		return [ArcBallR * Math.sin(degree), 0.0, ArcBallR * Math.cos(degree)];
+	}
+
+	document.addEventListener("keydown", ev => {
+		switch (ev.code) {
+		case "ArrowLeft":
+			Angle -= 1;
+			break;
+		case "ArrowRight":
+			Angle += 1;
+			break
+		}
+
+		let camera_position = calculateCameraPosition(Angle);
+		Camera.moveTo(camera_position);
+		Scene.render();
+	})
 </script>
 </body>
 </html>

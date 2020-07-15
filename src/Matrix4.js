@@ -1,66 +1,9 @@
-/*
-* 默认使用右手坐标系，但是webgl的裁剪坐标系是左手坐标系，所以对Z轴取反
-* webgl使用列主序
-* */
 const DEFAULT_MATRIX_ELEMENTS = [
 	1.0, 0.0, 0.0, 0.0,
 	0.0, 1.0, 0.0, 0.0,
-	0.0, 0.0, -1.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
 	0.0, 0.0, 0.0, 1.0
 ];
-
-class Vector4 {
-	constructor(x, y, z, w) {
-		this.elements = new Float32Array([x, y, z, w]);
-	}
-
-	// 加法
-	add(){
-
-	}
-
-	// 减法
-	minus(){
-
-	}
-
-	// 点乘
-	dot(){
-
-	}
-
-	// 叉乘
-	cross(){
-
-	}
-
-}
-
-class Vector3 {
-	constructor(x, y, z) {
-		this.elements = new Float32Array([x, y, z]);
-	}
-
-	// 加法
-	add(){
-
-	}
-
-	// 减法
-	minus(){
-
-	}
-
-	// 点乘
-	dot(){
-
-	}
-
-	// 叉乘
-	cross(){
-
-	}
-}
 
 class Matrix4 {
 	constructor(elements) {
@@ -118,6 +61,7 @@ class Matrix4 {
 		let sin = Math.sin(degree);
 
 		if (x === 0 && y === 0 && z !== 0){
+			// 绕Z轴旋转
 			if (z < 0){
 				sin = -sin;
 			}
@@ -129,6 +73,7 @@ class Matrix4 {
 				0.0, 0.0, 0.0, 1.0
 			]));
 		}else if (x === 0 && y !== 0 && z === 0){
+			// 绕Y轴旋转
 			if (y < 0){
 				sin = -sin;
 			}
@@ -139,6 +84,7 @@ class Matrix4 {
 				0.0, 0.0, 0.0, 1.0
 			]));
 		}else if (x !== 0 && y === 0 && z === 0){
+			// 绕X轴旋转
 			if (x < 0){
 				sin = -sin;
 			}
@@ -271,4 +217,5 @@ class Matrix4 {
 
 	}
 }
-export {Vector4, Vector3, Matrix4};
+
+export default Matrix4;
