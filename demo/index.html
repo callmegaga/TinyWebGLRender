@@ -5,66 +5,102 @@
 	<title>TinyRender</title>
 </head>
 <body>
-<canvas id="canvas" width="800" height="800"></canvas><h1>按下方向键左右旋转摄像机</h1>
+<canvas id="canvas" width="800" height="800"></canvas>
+<h2>按下方向键左右旋转摄像机，按下AWSD移动三角形</h2>
 <script src="../build/TinyRender.min.js"></script>
 <script>
-	const VertexShaderSource = "" +
+	const VertexShaderSourceOne = "" +
 		"attribute vec4 a_position;\n" +
 		"attribute vec4 a_color;\n" +
-		"uniform mat4 u_camera;\n" +
+		"uniform mat4 u_projection;\n" +
+		"uniform mat4 u_view;\n" +
+		"uniform mat4 u_model;\n" +
 		"varying vec4 v_color;" +
 		"void main() {\n" +
-		"	gl_Position = u_camera * a_position;\n" +
+		"	gl_Position = u_projection * u_view * u_model * a_position;\n" +
 		"	v_color = a_color;" +
 		"}\n";
 
-	const FragmentShaderSource = "" +
+	const FragmentShaderSourceOne = "" +
 		"precision mediump float;\n" +
 		"varying vec4 v_color;" +
 		"void main() {\n" +
 		"	gl_FragColor = v_color;\n" +
 		"}\n";
 
-	const Vertices = new Float32Array([
+	const VertexShaderSourceTwo = "" +
+		"attribute vec4 a_position;\n" +
+		"attribute vec4 a_color;\n" +
+		"uniform mat4 u_projection;\n" +
+		"uniform mat4 u_view;\n" +
+		"uniform mat4 u_model;\n" +
+		"varying vec4 v_color;" +
+		"void main() {\n" +
+		"	gl_Position = u_projection * u_view * u_model * a_position;\n" +
+		"	v_color = a_color;" +
+		"}\n";
+
+	const FragmentShaderSourceTwo = "" +
+		"precision mediump float;\n" +
+		"varying vec4 v_color;" +
+		"void main() {\n" +
+		"	gl_FragColor = v_color;\n" +
+		"}\n";
+
+	const VerticesOne = new Float32Array([
 		0.0,  0.5, -0.1,
 		-0.5, -0.5, -0.1,
 		0.5, -0.5, -0.1,
+	]);
 
+	const VerticesTwo = new Float32Array([
 		-0.25,  0.5, 0.1,
 		-0.75, -0.5, 0.1,
 		0.25, -0.5, 0.1,
+	]);
 
+	const VerticesThree = new Float32Array([
 		0.25,  0.5, 0.0,
 		-0.25, -0.5, 0.0,
 		0.75, -0.5, 0.0,
 	]);
 
-	const Colors = new Float32Array([
+
+	const ColorOne = new Float32Array([
 		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+	])
+
+	const ColorTwo = new Float32Array([
 		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+	])
+
+	const ColorThree = new Float32Array([
 		0.0, 0.0, 1.0,
-
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
 	])
 
 	const Scene = new TinyRender.Engine("canvas");
-	// TODO hidden Buffer for user, should pass the (vertices, colors) to Model
-	// e.g. const TrianglesModel = new TinyRender.Model(ColorShader, [vertices, colors]);
-	const VertexBuffer = new TinyRender.Buffer(Vertices, 3, Scene.webgl.FLOAT, "a_position");
-	const ColorBuffer = new TinyRender.Buffer(Colors, 3, Scene.webgl.FLOAT, "a_color");
-	const ColorShader = new TinyRender.Shader(VertexShaderSource, FragmentShaderSource, ["a_position", "a_color"], ["u_camera"]);
-	// TODO hidden number(9) for user
-	// TODO create triangle model 3 times and add them to Scene
-	const TrianglesModel = new TinyRender.Model(ColorShader, [VertexBuffer, ColorBuffer], 9);
+
+	const ColorShaderOne = new TinyRender.Shader(VertexShaderSourceOne, FragmentShaderSourceOne, ["a_position", "a_color"], ["u_projection", "u_view", "u_model"]);
+	const ColorShaderTwo = new TinyRender.Shader(VertexShaderSourceTwo, FragmentShaderSourceTwo, ["a_position", "a_color"], ["u_projection", "u_view", "u_model"]);
+
+	const TrianglesModelOne = new TinyRender.Model(ColorShaderOne, VerticesOne, ColorOne);
+	const TrianglesModelTwo = new TinyRender.Model(ColorShaderOne, VerticesTwo, ColorTwo);
+	const TrianglesModelThree = new TinyRender.Model(ColorShaderTwo, VerticesThree, ColorThree);
+
+
 	const Camera = new TinyRender.OrthographicCamera([0.0, 0.0, 5.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0],-2, 2, -2, 2, 1, -100);
-	Scene.addModel(TrianglesModel);
+	Scene.addModel(TrianglesModelOne);
+	Scene.addModel(TrianglesModelTwo);
+	Scene.addModel(TrianglesModelThree);
+
 	Scene.setCamera(Camera);
+	Scene.init();
 	Scene.render();
 
 	// 初始的轨道相机旋转角度
@@ -80,6 +116,9 @@
 		return [ArcBallR * Math.sin(degree), 0.0, ArcBallR * Math.cos(degree)];
 	}
 
+	// 三角形移动位置
+	let MoveX = 0, MoveY = 0;
+
 	document.addEventListener("keydown", ev => {
 		switch (ev.code) {
 		case "ArrowLeft":
@@ -87,11 +126,24 @@
 			break;
 		case "ArrowRight":
 			Angle += 1;
-			break
+			break;
+		case "KeyA":
+			MoveX -= 0.1;
+			break;
+		case "KeyW":
+			MoveY += 0.1;
+			break;
+		case "KeyS":
+			MoveY -= 0.1;
+			break;
+		case "KeyD":
+			MoveX += 0.1;
+			break;
 		}
 
 		let camera_position = calculateCameraPosition(Angle);
 		Camera.moveTo(camera_position);
+		TrianglesModelOne.moveTo(MoveX, MoveY, 0);
 		Scene.render();
 	})
 </script>
