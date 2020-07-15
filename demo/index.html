@@ -54,9 +54,13 @@
 	])
 
 	const Scene = new TinyRender.Engine("canvas");
+	// TODO hidden Buffer for user, should pass the (vertices, colors) to Model
+	// e.g. const TrianglesModel = new TinyRender.Model(ColorShader, [vertices, colors]);
 	const VertexBuffer = new TinyRender.Buffer(Vertices, 3, Scene.webgl.FLOAT, "a_position");
 	const ColorBuffer = new TinyRender.Buffer(Colors, 3, Scene.webgl.FLOAT, "a_color");
 	const ColorShader = new TinyRender.Shader(VertexShaderSource, FragmentShaderSource, ["a_position", "a_color"], ["u_camera"]);
+	// TODO hidden number(9) for user
+	// TODO create triangle model 3 times and add them to Scene
 	const TrianglesModel = new TinyRender.Model(ColorShader, [VertexBuffer, ColorBuffer], 9);
 	const Camera = new TinyRender.OrthographicCamera([0.0, 0.0, 5.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0],-2, 2, -2, 2, 1, -100);
 	Scene.addModel(TrianglesModel);
